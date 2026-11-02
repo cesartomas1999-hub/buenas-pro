@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buenas pro del día</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #f4f6f9; --panel: #ffffff; --text: #18212f; --muted: #5d6b7e; --line: #e2e7ee;
+    --accent: #0b6bcb; --accent-soft: #e6f0fb; --ok: #137a4a;
+    --obra: #b4540a; --obra-bg: #fdf0e3; --bien: #0b6bcb; --bien-bg: #e6f0fb;
+    --serv: #6a3fb5; --serv-bg: #f0eafb; --cons: #137a4a; --cons-bg: #e4f5ec;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f141b; --panel: #171e28; --text: #e7ecf3; --muted: #9aa8ba; --line: #283241;
+      --accent: #5aa7f0; --accent-soft: #1b2b40; --ok: #4cc38a;
+      --obra: #f0a35e; --obra-bg: #33251a; --bien: #6cb2f5; --bien-bg: #1a2a3d;
+      --serv: #b79af0; --serv-bg: #29213a; --cons: #5fd19b; --cons-bg: #17301f;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  select, input, button { font: inherit; color: inherit; }
+  .dia select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 20px; }
+  .stat span { color: var(--muted); font-size: 12px; }
+
+  .filtros { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+             display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; box-shadow: var(--shadow);
+             position: sticky; top: 0; z-index: 5; }
+  .filtros input, .filtros select { width: 100%; padding: 9px 10px; border: 1px solid var(--line);
+             border-radius: 8px; background: var(--bg); min-width: 0; }
+  .chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip { border: 1px solid var(--line); background: var(--bg); padding: 5px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .acciones { margin-left: auto; display: flex; gap: 6px; }
+  .btn { border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .btn.sec { background: transparent; color: var(--accent); }
+
+  .info { color: var(--muted); font-size: 13px; margin: 12px 2px; }
+  .lista { display: grid; gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; box-shadow: var(--shadow);
+          display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; }
+  .card .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+  .tag { padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+  .t-Obra { color: var(--obra); background: var(--obra-bg); }
+  .t-Bien { color: var(--bien); background: var(--bien-bg); }
+  .t-Servicio { color: var(--serv); background: var(--serv-bg); }
+  .t-Consultoría { color: var(--cons); background: var(--cons-bg); }
+  .t-Otro { color: var(--muted); background: var(--bg); }
+  .monto { text-align: right; font-weight: 700; font-size: 18px; white-space: nowrap; grid-row: 1 / span 2; grid-column: 2; }
+  .monto small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .entidad { font-weight: 600; }
+  .desc { grid-column: 1 / -1; color: var(--text); }
+  .ganador { grid-column: 1 / -1; background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+  .ganador .ruc { font-family: ui-monospace, Consolas, monospace; color: var(--muted); }
+  .ganador .nota { color: var(--muted); font-size: 12px; }
+  .pie { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+  .pie a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .vacio { text-align: center; padding: 40px 10px; color: var(--muted); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ok); color: #fff;
+           padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.ver { opacity: 1; }
+  mark { background: #ffe58a; color: #111; border-radius: 2px; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 12px 16px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .filtros { grid-template-columns: 1fr 1fr; position: static; }
+    .filtros .buscar { grid-column: 1 / -1; }
+    .acciones { margin-left: 0; width: 100%; }
+    .acciones .btn { flex: 1; }
+    .card { grid-template-columns: 1fr; }
+    .monto { grid-row: auto; grid-column: 1; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Buenas pro</h1>
+      <div class="sub" id="sub">Cargando…</div>
+    </div>
+    <label class="dia">Día: <select id="dia" aria-label="Elegir día"></select></label>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="filtros">
+    <input class="buscar" id="q" type="search" placeholder="Buscar entidad, ganador, RUC, nomenclatura, descripción…">
+    <select id="dep" aria-label="Departamento"><option value="">Todos los departamentos</option></select>
+    <select id="monto" aria-label="Monto">
+      <option value="">Cualquier monto</option>
+      <option value="0-100000">Hasta S/ 100 mil</option>
+      <option value="100000-500000">S/ 100 mil – 500 mil</option>
+      <option value="500000-2000000">S/ 500 mil – 2 millones</option>
+      <option value="2000000-10000000">S/ 2 – 10 millones</option>
+      <option value="10000000-">Más de S/ 10 millones</option>
+    </select>
+    <select id="orden" aria-label="Ordenar">
+      <option value="monto">Mayor monto primero</option>
+      <option value="montoAsc">Menor monto primero</option>
+      <option value="entidad">Entidad (A–Z)</option>
+      <option value="dep">Departamento (A–Z)</option>
+    </select>
+    <div class="chips" id="tipos">
+      <button class="chip" aria-pressed="true" data-tipo="">Todos</button>
+      <button class="chip" aria-pressed="false" data-tipo="Obra">Obra</button>
+      <button class="chip" aria-pressed="false" data-tipo="Bien">Bien</button>
+      <button class="chip" aria-pressed="false" data-tipo="Servicio">Servicio</button>
+      <button class="chip" aria-pressed="false" data-tipo="Consultoría">Consultoría</button>
+      <div class="acciones">
+        <button class="btn sec" id="limpiar">Limpiar</button>
+        <button class="btn" id="copiar">Copiar a Excel</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="info" id="info"></div>
+  <main class="lista" id="lista"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const soles = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const corto = new Intl.NumberFormat("es-PE", { notation: "compact", maximumFractionDigits: 1 });
+const SIMBOLO = { PEN: "S/", USD: "US$", EUR: "€" };
+let datos = [], tipo = "";
+
+const quitarTildes = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fechaLarga = f => new Date(f + "T12:00:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const dinero = (m, mon) => m == null ? "—" : `${SIMBOLO[mon] || mon} ${soles.format(m)}`;
+
+async function cargarJSON(url) {
+  const r = await fetch(url + "?v=" + Date.now());
+  if (!r.ok) throw new Error(url);
+  return r.json();
+}
+
+async function iniciar() {
+  try {
+    const indice = await cargarJSON("data/index.json");
+    $("#dia").innerHTML = indice.dias.map(d =>
+      `<option value="${d.fecha}">${d.fecha} · ${d.total} buenas pro</option>`).join("");
+    const pedido = new URLSearchParams(location.search).get("dia");
+    const inicial = indice.dias.some(d => d.fecha === pedido) ? pedido : indice.ultima;
+    $("#dia").value = inicial;
+    await cargarDia(inicial);
+  } catch (e) {
+    $("#sub").textContent = "Aún no hay datos. Espera la primera actualización automática.";
+  }
+}
+
+async function cargarDia(fecha) {
+  $("#sub").textContent = "Cargando…";
+  const d = await cargarJSON(`data/${fecha}.json`);
+  datos = d.buenas_pro.map(b => ({ ...b,
+    _texto: quitarTildes([b.entidad, b.nomenclatura, b.descripcion, b.departamento, b.provincia,
+      ...b.items, ...b.ganadores.flatMap(g => [g.nombre, g.ruc])].join(" ")) }));
+  $("#sub").textContent = `Adjudicadas el ${fechaLarga(d.fecha)} · actualizado ${new Date(d.generado).toLocaleString("es-PE")}`;
+  const deps = [...new Set(datos.map(b => b.departamento).filter(Boolean))].sort();
+  const actual = $("#dep").value;
+  $("#dep").innerHTML = `<option value="">Todos los departamentos</option>` +
+    deps.map(x => `<option ${x === actual ? "selected" : ""}>${esc(x)}</option>`).join("");
+  history.replaceState(null, "", "?dia=" + fecha);
+  pintar();
+}
+
+function filtrar() {
+  const q = quitarTildes($("#q").value.trim()).split(/\s+/).filter(Boolean);
+  const dep = $("#dep").value;
+  const [min, max] = ($("#monto").value || "-").split("-").map(x => x === "" ? null : +x);
+  const lista = datos.filter(b =>
+    (!tipo || b.tipo === tipo) &&
+    (!dep || b.departamento === dep) &&
+    (min == null || (b.monto ?? 0) >= min) &&
+    (max == null || (b.monto ?? 0) < max) &&
+    q.every(p => b._texto.includes(p)));
+  const o = $("#orden").value;
+  const cmp = {
+    monto: (a, b) => (b.monto ?? 0) - (a.monto ?? 0),
+    montoAsc: (a, b) => (a.monto ?? 0) - (b.monto ?? 0),
+    entidad: (a, b) => a.entidad.localeCompare(b.entidad),
+    dep: (a, b) => a.departamento.localeCompare(b.departamento) || (b.monto ?? 0) - (a.monto ?? 0),
+  }[o];
+  return lista.sort(cmp);
+}
+
+function resaltar(texto) {
+  const palabras = $("#q").value.trim().split(/\s+/).filter(p => p.length > 1);
+  let html = esc(texto);
+  for (const p of palabras) {
+    const re = new RegExp(`(${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    html = html.replace(re, "<mark>$1</mark>");
+  }
+  return html;
+}
+
+function pintar() {
+  const lista = filtrar();
+  const total = lista.reduce((s, b) => s + (b.moneda === "PEN" ? (b.monto || 0) : 0), 0);
+  const cuenta = t => lista.filter(b => b.tipo === t).length;
+  $("#stats").innerHTML = `
+    <div class="stat"><b>${lista.length}</b><span>buenas pro${lista.length !== datos.length ? ` (de ${datos.length})` : ""}</span></div>
+    <div class="stat"><b>S/ ${corto.format(total)}</b><span>monto total adjudicado</span></div>
+    <div class="stat"><b>${cuenta("Obra")}</b><span>obras</span></div>
+    <div class="stat"><b>${cuenta("Bien") + cuenta("Servicio") + cuenta("Consultoría")}</b><span>bienes, servicios y consultorías</span></div>`;
+  $("#info").textContent = lista.length ? "" : "";
+  if (!lista.length) {
+    $("#lista").innerHTML = `<div class="vacio">No hay buenas pro con estos filtros.</div>`;
+    return;
+  }
+  $("#lista").innerHTML = lista.map(b => `
+    <article class="card">
+      <div class="top"><span class="tag t-${esc(b.tipo)}">${esc(b.tipo)}</span>
+        <span>${esc(b.departamento || "—")}${b.provincia ? " · " + esc(b.provincia) : ""}</span>
+        <span>· ${esc(b.nomenclatura)}</span></div>
+      <div class="monto">${dinero(b.monto, b.moneda)}
+        ${b.valor_referencial ? `<small>V. ref. ${dinero(b.valor_referencial, b.moneda)}</small>` : ""}</div>
+      <div class="entidad">${resaltar(b.entidad)}</div>
+      <div class="desc">${resaltar(b.descripcion)}</div>
+      ${b.ganadores.map(g => `
+        <div class="ganador">🏆 <b>${resaltar(g.nombre)}</b>
+          ${g.ruc ? `<span class="ruc">RUC ${resaltar(g.ruc)}</span>` : ""}
+          ${g.telefono ? ` · ☎ ${esc(g.telefono)}` : ""}
+          ${g.integrantes.length ? `<div>Integrantes: ${g.integrantes.map(i => `${esc(i.nombre)} <span class="ruc">(${esc(i.ruc)})</span>`).join(", ")}</div>`
+            : g.consorcio ? `<div class="nota">Consorcio: la API del OECE no publica sus integrantes; revísalos en el enlace del proceso.</div>` : ""}
+        </div>`).join("")}
+      <div class="pie">
+        <span>Buena pro: ${esc(b.fecha_buena_pro)}</span>
+        <span>${esc(b.procedimiento)}</span>
+        ${b.postores ? `<span>${b.postores} postores</span>` : ""}
+        <a href="${esc(b.enlace)}" target="_blank" rel="noopener">Ver proceso ↗</a>
+      </div>
+    </article>`).join("");
+}
+
+function copiarExcel() {
+  const lista = filtrar();
+  const limpio = s => String(s ?? "").replace(/[\t\r\n]+/g, " ").trim();
+  const filas = [["Fecha buena pro", "Entidad", "RUC entidad", "Departamento", "Provincia", "Nomenclatura", "Procedimiento",
+                  "Tipo", "Descripción", "Moneda", "Monto adjudicado", "Valor referencial", "Ganador", "RUC ganador",
+                  "Consorcio", "Teléfono", "Postores", "Enlace"]];
+  for (const b of lista) for (const g of b.ganadores.length ? b.ganadores : [{}]) {
+    filas.push([b.fecha_buena_pro, b.entidad, b.entidad_ruc, b.departamento, b.provincia, b.nomenclatura, b.procedimiento,
+                b.tipo, b.descripcion, b.moneda, (b.monto ?? "").toString().replace(".", ","),
+                (b.valor_referencial ?? "").toString().replace(".", ","), g.nombre, g.ruc || "",
+                g.consorcio ? "Sí" : "No", g.telefono, b.postores, b.enlace]);
+  }
+  const tsv = filas.map(f => f.map(limpio).join("\t")).join("\n");
+  const ok = () => avisar(`${lista.length} filas copiadas. Pega en Excel con Ctrl+V.`);
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(tsv).then(ok, () => respaldo(tsv, ok));
+  else respaldo(tsv, ok);
+}
+function respaldo(texto, ok) {
+  const t = document.createElement("textarea"); t.value = texto; document.body.appendChild(t);
+  t.select(); document.execCommand("copy"); t.remove(); ok();
+}
+function avisar(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("ver");
+  clearTimeout(avisar.t); avisar.t = setTimeout(() => t.classList.remove("ver"), 2500);
+}
+
+$("#dia").addEventListener("change", e => cargarDia(e.target.value));
+["#q", "#dep", "#monto", "#orden"].forEach(s => $(s).addEventListener("input", pintar));
+$("#tipos").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  tipo = c.dataset.tipo;
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+  pintar();
+});
+$("#limpiar").addEventListener("click", () => {
+  $("#q").value = ""; $("#dep").value = ""; $("#monto").value = ""; $("#orden").value = "monto";
+  document.querySelector('.chip[data-tipo=""]').click();
+});
+$("#copiar").addEventListener("click", copiarExcel);
+iniciar();
+</script>
+</body>
+</html>
