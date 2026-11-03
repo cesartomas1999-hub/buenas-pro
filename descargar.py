@@ -134,6 +134,7 @@ def convertir(proceso: dict, adjudicacion: dict) -> dict:
         nombre = proveedor.get("name") or parte.get("name") or ""
         ganadores.append({
             "nombre": nombre,
+            "codigo": proveedor.get("id") or "",   # p. ej. PE-RUC-20611932767 (sirve para enlazar su historial)
             "ruc": ruc_de(proveedor.get("id")),
             "consorcio": nombre.upper().startswith("CONSORCIO") or not ruc_de(proveedor.get("id")),
             # La API del OECE no publica los integrantes de los consorcios; se deja el

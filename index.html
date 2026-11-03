@@ -67,6 +67,11 @@
   .ganador { grid-column: 1 / -1; background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
   .ganador .ruc { font-family: ui-monospace, Consolas, monospace; color: var(--muted); }
   .ganador .nota { color: var(--muted); font-size: 12px; }
+  .ganador a.nombre { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .ganador .links { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 6px; font-size: 13px; }
+  .ganador .links a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .mini { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 6px;
+          padding: 2px 8px; font-size: 12px; cursor: pointer; }
   .pie { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
   .pie a { color: var(--accent); text-decoration: none; font-weight: 600; }
   .vacio { text-align: center; padding: 40px 10px; color: var(--muted); }
@@ -140,6 +145,13 @@ const soles = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2, maximum
 const corto = new Intl.NumberFormat("es-PE", { notation: "compact", maximumFractionDigits: 1 });
 const SIMBOLO = { PEN: "S/", USD: "US$", EUR: "€" };
 let datos = [], tipo = "";
+const FICHA = "https://apps.oece.gob.pe/perfilprov-ui/ficha/";
+const PROVEEDOR = "https://contratacionesabiertas.oece.gob.pe/proveedor/";
+// Historial del proveedor en el portal OECE (funciona también con consorcios)
+const historial = g => g.codigo ? PROVEEDOR + encodeURIComponent(g.codigo)
+                     : g.ruc ? PROVEEDOR + "PE-RUC-" + g.ruc : "";
+// Al hacer clic en el nombre: la ficha (con teléfono) si hay RUC; si es consorcio, su historial
+const enlaceEmpresa = g => g.ruc ? FICHA + g.ruc : (historial(g) || "#");
 
 const quitarTildes = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -235,9 +247,14 @@ function pintar() {
       <div class="entidad">${resaltar(b.entidad)}</div>
       <div class="desc">${resaltar(b.descripcion)}</div>
       ${b.ganadores.map(g => `
-        <div class="ganador">🏆 <b>${resaltar(g.nombre)}</b>
+        <div class="ganador">🏆 <a class="nombre" href="${esc(enlaceEmpresa(g))}" target="_blank" rel="noopener"><b>${resaltar(g.nombre)}</b></a>
           ${g.ruc ? `<span class="ruc">RUC ${resaltar(g.ruc)}</span>` : ""}
           ${g.telefono ? ` · ☎ ${esc(g.telefono)}` : ""}
+          <div class="links">
+            ${g.ruc ? `<a href="${FICHA}${esc(g.ruc)}" target="_blank" rel="noopener">Ficha: teléfono y email ↗</a>` : ""}
+            ${historial(g) ? `<a href="${esc(historial(g))}" target="_blank" rel="noopener">Procesos que ganó ↗</a>` : ""}
+            ${g.ruc ? `<button class="mini" data-ruc="${esc(g.ruc)}">Copiar RUC</button>` : ""}
+          </div>
           ${g.integrantes.length ? `<div>Integrantes: ${g.integrantes.map(i => `${esc(i.nombre)} <span class="ruc">(${esc(i.ruc)})</span>`).join(", ")}</div>`
             : g.consorcio ? `<div class="nota">Consorcio: la API del OECE no publica sus integrantes; revísalos en el enlace del proceso.</div>` : ""}
         </div>`).join("")}
@@ -255,12 +272,13 @@ function copiarExcel() {
   const limpio = s => String(s ?? "").replace(/[\t\r\n]+/g, " ").trim();
   const filas = [["Fecha buena pro", "Entidad", "RUC entidad", "Departamento", "Provincia", "Nomenclatura", "Procedimiento",
                   "Tipo", "Descripción", "Moneda", "Monto adjudicado", "Valor referencial", "Ganador", "RUC ganador",
-                  "Consorcio", "Teléfono", "Postores", "Enlace"]];
+                  "Consorcio", "Teléfono", "Postores", "Enlace proceso", "Ficha ganador", "Historial ganador"]];
   for (const b of lista) for (const g of b.ganadores.length ? b.ganadores : [{}]) {
     filas.push([b.fecha_buena_pro, b.entidad, b.entidad_ruc, b.departamento, b.provincia, b.nomenclatura, b.procedimiento,
                 b.tipo, b.descripcion, b.moneda, (b.monto ?? "").toString().replace(".", ","),
                 (b.valor_referencial ?? "").toString().replace(".", ","), g.nombre, g.ruc || "",
-                g.consorcio ? "Sí" : "No", g.telefono, b.postores, b.enlace]);
+                g.consorcio ? "Sí" : "No", g.telefono, b.postores, b.enlace,
+                g.ruc ? FICHA + g.ruc : "", g.nombre ? historial(g) : ""]);
   }
   const tsv = filas.map(f => f.map(limpio).join("\t")).join("\n");
   const ok = () => avisar(`${lista.length} filas copiadas. Pega en Excel con Ctrl+V.`);
@@ -289,6 +307,12 @@ $("#limpiar").addEventListener("click", () => {
   document.querySelector('.chip[data-tipo=""]').click();
 });
 $("#copiar").addEventListener("click", copiarExcel);
+$("#lista").addEventListener("click", e => {
+  const b = e.target.closest("[data-ruc]"); if (!b) return;
+  const ruc = b.dataset.ruc, ok = () => avisar(`RUC ${ruc} copiado`);
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(ruc).then(ok, () => respaldo(ruc, ok));
+  else respaldo(ruc, ok);
+});
 iniciar();
 </script>
 </body>
