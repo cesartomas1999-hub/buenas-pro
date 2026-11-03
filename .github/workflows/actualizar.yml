@@ -34,6 +34,16 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      - name: Diagnóstico de conexión con el OECE
+        if: github.event_name == 'push'
+        continue-on-error: true
+        run: |
+          R=$(curl -sS -m 90 -o /tmp/r.json -w "%{http_code} %{time_total}s %{size_download}B" "https://contratacionesabiertas.oece.gob.pe/api/v1/recordsAfter?dataSegmentationID=2026-10&size=100" 2>&1) || true
+          echo "::warning::OECE recordsAfter -> $R"
+          R2=$(curl -sS -m 30 -o /dev/null -w "%{http_code} %{time_total}s" "https://contratacionesabiertas.oece.gob.pe/" 2>&1) || true
+          echo "::warning::OECE portada -> $R2"
+          head -c 300 /tmp/r.json | tr '\n' ' ' | sed 's/^/::warning::inicio respuesta: /'; echo
+
       - name: Descargar buenas pro
         if: github.event_name != 'push'
         run: python descargar.py
