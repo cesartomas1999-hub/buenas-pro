@@ -10,6 +10,10 @@ $env:PYTHONIOENCODING = "utf-8"
 
 "==== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') ====" | Out-File $log -Append -Encoding utf8
 
+# Evitar que dos ejecuciones corran a la vez (p. ej. al iniciar sesión y a las 6:00)
+$candado = New-Object System.Threading.Mutex($false, "Global\BuenasProActualizar")
+if (-not $candado.WaitOne(0)) { "Ya hay otra actualización en curso; salgo." | Out-File $log -Append -Encoding utf8; exit 0 }
+
 # Esperar hasta 10 minutos a que haya internet (por si la PC recién se encendió)
 for ($i = 0; $i -lt 20; $i++) {
     try { Invoke-WebRequest -UseBasicParsing "https://github.com" -TimeoutSec 15 | Out-Null; break }
