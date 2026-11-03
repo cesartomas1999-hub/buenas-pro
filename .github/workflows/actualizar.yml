@@ -1,67 +1,36 @@
-# Cada día a las 6:00 a. m. de Lima (11:00 UTC) descarga las buenas pro y publica la página.
-name: Actualizar buenas pro
+# Publica la página en GitHub Pages cada vez que llegan datos nuevos.
+#
+# Nota: el servidor del OECE bloquea las conexiones desde los servidores de GitHub
+# (responde 403), así que la descarga NO se hace aquí. La hace tu PC cada mañana con
+# actualizar.ps1 (Programador de tareas de Windows) y sube los datos; al llegar,
+# este flujo publica la página.
+name: Publicar página
 
 on:
-  schedule:
-    - cron: "0 11 * * *"
-  workflow_dispatch:        # permite ejecutarlo a mano con el botón "Run workflow"
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 concurrency:
-  group: actualizar
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  actualizar:
+  publicar:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     environment:
       name: github-pages
       url: ${{ steps.publicar.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Instalar dependencias
-        run: pip install -r requirements.txt
-
-      - name: Diagnóstico de conexión con el OECE
-        if: github.event_name == 'push'
-        continue-on-error: true
-        run: |
-          R=$(curl -sS -m 90 -o /tmp/r.json -w "%{http_code} %{time_total}s %{size_download}B" "https://contratacionesabiertas.oece.gob.pe/api/v1/recordsAfter?dataSegmentationID=2026-10&size=100" 2>&1) || true
-          echo "::warning::OECE recordsAfter -> $R"
-          R2=$(curl -sS -m 30 -o /dev/null -w "%{http_code} %{time_total}s" "https://contratacionesabiertas.oece.gob.pe/" 2>&1) || true
-          echo "::warning::OECE portada -> $R2"
-          head -c 300 /tmp/r.json | tr '\n' ' ' | sed 's/^/::warning::inicio respuesta: /'; echo
-
-      - name: Descargar buenas pro
-        if: github.event_name != 'push'
-        run: python descargar.py
-
-      - name: Guardar datos en el repositorio
-        if: github.event_name != 'push'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add data
-          git commit -m "Datos $(TZ=America/Lima date -d yesterday +%F)" || echo "Sin cambios"
-          git push
-
       - uses: actions/configure-pages@v5
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-
       - id: publicar
         uses: actions/deploy-pages@v4
