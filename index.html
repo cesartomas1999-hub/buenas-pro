@@ -256,13 +256,17 @@ function pintar() {
             ${g.ruc ? `<button class="mini" data-ruc="${esc(g.ruc)}">Copiar RUC</button>` : ""}
           </div>
           ${g.integrantes.length ? `<div>Integrantes: ${g.integrantes.map(i => `${esc(i.nombre)} <span class="ruc">(${esc(i.ruc)})</span>`).join(", ")}</div>`
-            : g.consorcio ? `<div class="nota">Consorcio: la API del OECE no publica sus integrantes; revísalos en el enlace del proceso.</div>` : ""}
+            : g.consorcio ? `<div class="nota">Consorcio: sus integrantes figuran en el
+                ${b.acta ? `<a href="${esc(b.acta)}" target="_blank" rel="noopener">acta de buena pro del SEACE ↗</a> (descarga un .zip)`
+                         : `acta de buena pro del SEACE (busca el proceso ${esc(b.nomenclatura)})`}.</div>` : ""}
         </div>`).join("")}
       <div class="pie">
         <span>Buena pro: ${esc(b.fecha_buena_pro)}</span>
         <span>${esc(b.procedimiento)}</span>
         ${b.postores ? `<span>${b.postores} postores</span>` : ""}
         <a href="${esc(b.enlace)}" target="_blank" rel="noopener">Ver proceso ↗</a>
+        ${b.acta ? `<a href="${esc(b.acta)}" target="_blank" rel="noopener" title="Descarga un .zip del SEACE">Acta de buena pro ↓</a>` : ""}
+        ${b.evaluacion ? `<a href="${esc(b.evaluacion)}" target="_blank" rel="noopener" title="Descarga un .zip del SEACE">Evaluación ↓</a>` : ""}
       </div>
     </article>`).join("");
 }
@@ -272,13 +276,13 @@ function copiarExcel() {
   const limpio = s => String(s ?? "").replace(/[\t\r\n]+/g, " ").trim();
   const filas = [["Fecha buena pro", "Entidad", "RUC entidad", "Departamento", "Provincia", "Nomenclatura", "Procedimiento",
                   "Tipo", "Descripción", "Moneda", "Monto adjudicado", "Valor referencial", "Ganador", "RUC ganador",
-                  "Consorcio", "Teléfono", "Postores", "Enlace proceso", "Ficha ganador", "Historial ganador"]];
+                  "Consorcio", "Teléfono", "Postores", "Enlace proceso", "Ficha ganador", "Historial ganador", "Acta de buena pro"]];
   for (const b of lista) for (const g of b.ganadores.length ? b.ganadores : [{}]) {
     filas.push([b.fecha_buena_pro, b.entidad, b.entidad_ruc, b.departamento, b.provincia, b.nomenclatura, b.procedimiento,
                 b.tipo, b.descripcion, b.moneda, (b.monto ?? "").toString().replace(".", ","),
                 (b.valor_referencial ?? "").toString().replace(".", ","), g.nombre, g.ruc || "",
                 g.consorcio ? "Sí" : "No", g.telefono, b.postores, b.enlace,
-                g.ruc ? FICHA + g.ruc : "", g.nombre ? historial(g) : ""]);
+                g.ruc ? FICHA + g.ruc : "", g.nombre ? historial(g) : "", b.acta || ""]);
   }
   const tsv = filas.map(f => f.map(limpio).join("\t")).join("\n");
   const ok = () => avisar(`${lista.length} filas copiadas. Pega en Excel con Ctrl+V.`);

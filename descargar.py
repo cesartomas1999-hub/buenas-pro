@@ -143,6 +143,11 @@ def convertir(proceso: dict, adjudicacion: dict) -> dict:
             "telefono": telefono_de(parte),
         })
 
+    # Documentos del SEACE: el acta de buena pro trae los integrantes de los consorcios
+    def ultimo_documento(tipo):
+        docs = [d for d in tender.get("documents") or [] if d.get("documentType") == tipo and d.get("url")]
+        return docs[-1]["url"] if docs else ""
+
     items = [i.get("description") for i in adjudicacion.get("items") or [] if i.get("description")]
     valor = adjudicacion.get("value") or {}
     entidad_ruc = next((x.get("id") for x in comprador.get("additionalIdentifiers") or []
@@ -167,6 +172,8 @@ def convertir(proceso: dict, adjudicacion: dict) -> dict:
         "postores": tender.get("numberOfTenderers"),
         "ganadores": ganadores,
         "enlace": ENLACE_PROCESO.format(ocid=proceso.get("ocid")),
+        "acta": ultimo_documento("awardNotice"),
+        "evaluacion": ultimo_documento("evaluationReports"),
     }
 
 
